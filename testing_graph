@@ -1,0 +1,76 @@
+Sub FetchDataAndPlotGraph()
+
+    ' Variables for file system and data storage
+    Dim folderPath As String
+    Dim fileName As String
+    Dim filePath As String
+    Dim ws As Worksheet
+    Dim wb As Workbook
+    Dim currentRow As Long
+    Dim dataRange As Range
+    Dim xColumn As Range
+    Dim yColumn As Range
+    Dim chartObj As ChartObject
+    Dim graphData As Range
+    Dim masterSheet As Worksheet
+    
+    ' Initialize variables
+    folderPath = "C:\Your\Folder\Path\" ' Change this to your folder path
+    currentRow = 1 ' Starting row for collecting data
+    
+    ' Add a new sheet to store combined data
+    Set masterSheet = ThisWorkbook.Sheets.Add
+    masterSheet.Name = "Combined Data"
+    
+    ' Set header for the master sheet
+    masterSheet.Cells(1, 1).Value = "X Data"
+    masterSheet.Cells(1, 2).Value = "Y Data"
+    currentRow = 2 ' Start adding data from row 2
+    
+    ' Loop through each file in the folder
+    fileName = Dir(folderPath & "*.xls*") ' Can change to "*.xlsx" for only xlsx files
+    Do While fileName <> ""
+        filePath = folderPath & fileName
+        
+        ' Open each workbook
+        Set wb = Workbooks.Open(filePath)
+        Set ws = wb.Sheets(1) ' You can specify the sheet name here if needed
+        
+        ' Copy data from the two columns (e.g., column A for X, column B for Y)
+        Set xColumn = ws.Range("A2:A" & ws.Cells(Rows.Count, 1).End(xlUp).Row) ' Assuming X data is in column A
+        Set yColumn = ws.Range("D2:D" & ws.Cells(Rows.Count, 2).End(xlUp).Row) ' Assuming Y data is in column D
+        
+        ' Copy data to the master sheet
+        masterSheet.Range("A" & currentRow & ":A" & currentRow + xColumn.Rows.Count - 1).Value = xColumn.Value
+        masterSheet.Range("B" & currentRow & ":B" & currentRow + yColumn.Rows.Count - 1).Value = yColumn.Value
+        
+        ' Update the row counter
+        currentRow = currentRow + xColumn.Rows.Count
+        
+        ' Close the workbook without saving
+        wb.Close False
+        
+        ' Get next file
+        fileName = Dir
+    Loop
+    
+    ' Set the data range for graphing
+    Set graphData = masterSheet.Range("A1:B" & currentRow - 1)
+    
+    ' Create a chart
+    Set chartObj = masterSheet.ChartObjects.Add(300, 10, 500, 300)
+    With chartObj.Chart
+        .SetSourceData Source:=graphData
+        .ChartType = xlXYScatterLines ' Change this to the desired chart type (e.g., xlLine, xlColumn, etc.)
+        .HasTitle = True
+        .ChartTitle.Text = "Combined Data Graph"
+        .Axes(xlCategory).HasTitle = True
+        .Axes(xlCategory).AxisTitle.Text = "X Axis"
+        .Axes(xlValue).HasTitle = True
+        .Axes(xlValue).AxisTitle.Text = "Y Axis"
+    End With
+    
+    MsgBox "Data fetched and graph created successfully!"
+    
+End Sub
+
